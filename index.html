@@ -75,6 +75,8 @@ main{background:var(--surface);border:1px solid var(--line);border-radius:16px;p
 .opt[disabled]{cursor:default}
 .verdict{margin:0;font-family:var(--display);font-size:22px;font-weight:700}
 .verdict.ok{color:var(--ok-ink)} .verdict.bad{color:var(--bad-ink)}
+.ex{background:var(--sunk);border:1px solid var(--line);border-radius:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ex pre{margin:0;padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.55;white-space:pre;color:var(--fg)}
 .why{background:var(--sunk);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
 .why .eyebrow{font-size:11px}
 .why p{margin:0;font-size:15px;line-height:1.6}
@@ -307,7 +309,11 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     meta.appendChild(el('span','chip'+(cur.kind==='New'?' new':cur.kind==='Relearning'?' relearn':''),cur.kind));
     if(q.a.length>1)meta.appendChild(el('span','chip multi','Choose '+q.a.length));
     main.appendChild(meta);
-    main.appendChild(el('p','q',q.q));
+    var parts=q.q.split('{{X}}');
+    parts.forEach(function(t,i){
+      t=t.trim(); if(t)main.appendChild(el('p','q',t));
+      if(q.x&&q.x[i]!=null){var box=el('div','ex');box.appendChild(el('pre',null,q.x[i]));main.appendChild(box);}
+    });
     var opts=el('div','opts');
     q.o.forEach(function(text,i){
       var isSel=sel.indexOf(i)>=0, isAns=q.a.indexOf(i)>=0, cls='opt', mark='';
