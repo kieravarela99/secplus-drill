@@ -77,6 +77,44 @@ main{background:var(--surface);border:1px solid var(--line);border-radius:16px;p
 .verdict.ok{color:var(--ok-ink)} .verdict.bad{color:var(--bad-ink)}
 .ex{background:var(--sunk);border:1px solid var(--line);border-radius:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .ex pre{margin:0;padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.55;white-space:pre;color:var(--fg)}
+.doms{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.doms summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;min-height:44px;font-size:14px}
+.doms summary::-webkit-details-marker{display:none}
+.doms summary b{font-weight:600}
+.doms summary .chev{font-family:var(--mono);color:var(--muted);transition:transform .2s}
+.doms[open] summary .chev{transform:rotate(180deg)}
+.domlist{display:flex;flex-direction:column;gap:6px;padding:0 10px 12px}
+.dom{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:center;width:100%;text-align:left;font:inherit;padding:10px 12px;min-height:52px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.dom.on{border-color:var(--accent);background:var(--accent-soft)}
+.dom .dw{font-family:var(--mono);font-weight:600;font-size:15px;grid-row:span 2;min-width:40px}
+.dom .dn{font-weight:600;font-size:14px;min-width:0}
+.dom .ds{font-size:12px;color:var(--muted);grid-column:2/4}
+.dom .da{font-family:var(--mono);font-size:13px;font-weight:600;text-align:right}
+.dom .da.lo{color:var(--bad-ink)} .dom .da.hi{color:var(--ok-ink)}
+.hint.small{font-size:12px;padding:0 4px}
+.chip.dom-chip{background:transparent}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--sunk);border:1px solid var(--line);border-radius:12px}
+.tab{font:inherit;font-size:15px;font-weight:600;min-height:44px;border-radius:9px;border:none;background:transparent;color:var(--muted);cursor:pointer}
+.tab.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.plist{display:flex;flex-direction:column;gap:8px;padding-bottom:20px}
+.pcard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center;width:100%;text-align:left;font:inherit;padding:12px 14px;min-height:60px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.pcard b{font-size:16px}
+.pcard .pm{font-size:12.5px;color:var(--muted);grid-column:1}
+.pcard .ps{grid-row:1/3;grid-column:2;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--muted)}
+.pcard .ps.ok{color:var(--ok-ink)} .pcard .ps.mid{color:var(--warn-ink)}
+.scen{margin:0;font-size:16px;line-height:1.55;white-space:pre-line}
+.pitems{display:flex;flex-direction:column;gap:12px}
+.pitem{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line)}
+.pitem.ok{border-color:var(--ok);background:var(--ok-soft)}
+.pitem.bad{border-color:var(--bad);background:var(--bad-soft)}
+.pitem label{font-weight:500;line-height:1.45}
+.pitem label.mono{font-family:var(--mono);font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.pitem select{font:inherit;font-size:16px;min-height:48px;padding:0 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);width:100%}
+.pitem select:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.pitem .res{font-size:13.5px;font-weight:600}
+.pitem.ok .res{color:var(--ok-ink)} .pitem.bad .res{color:var(--bad-ink)}
+.pitem .pw{margin:0;font-size:14px;line-height:1.55}
+.back{align-self:flex-start;padding-left:0}
 .why{background:var(--sunk);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
 .why .eyebrow{font-size:11px}
 .why p{margin:0;font-size:15px;line-height:1.6}
@@ -152,6 +190,11 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
   </section>
 
   <section id="study" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="tabs" role="tablist">
+      <button class="tab on" id="tabQ" role="tab" aria-selected="true">Questions</button>
+      <button class="tab" id="tabP" role="tab" aria-selected="false">PBQs</button>
+    </div>
+    <div id="qstats" style="display:flex;flex-direction:column;gap:16px">
     <div class="stats" aria-live="polite">
       <div class="stat"><b id="sDue">0</b><span>Due now</span></div>
       <div class="stat"><b id="sNew">0</b><span>New left</span></div>
@@ -160,6 +203,12 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     </div>
     <div class="bar" role="progressbar" aria-label="Questions seen" id="bar" aria-valuemin="0"><i id="barFill"></i></div>
     <span class="barlabel" id="barLabel"></span>
+    <details class="doms" id="doms">
+      <summary><span>Studying: <b id="focusLabel">All domains, exam mix</b></span><span class="chev" aria-hidden="true">&#9662;</span></summary>
+      <div class="domlist" id="domList"></div>
+      <p class="hint small" style="padding:0 14px 12px">Domains are a best guess from each question's wording. "Right" is your first-try accuracy in that domain.</p>
+    </details>
+    </div>
     <main id="main" aria-live="polite"></main>
     <footer>
       <p class="hint">Progress saves to your account after every question.</p>
@@ -209,6 +258,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     out.revToday=Math.max(ad?a.revToday||0:0,bd?b.revToday||0:0);
     out.extraNew=Math.max(ad?a.extraNew||0:0,bd?b.extraNew||0:0);
     out.saved=Math.max(a.saved||0,b.saved||0);
+    out.focus=((a.saved||0)>=(b.saved||0)?a.focus:b.focus)||0;
+    out.pbq={}; [a.pbq||{},b.pbq||{}].forEach(function(src){Object.keys(src).forEach(function(k){var x=src[k],y=out.pbq[k]; out.pbq[k]=!y?x:{b:Math.max(x.b||0,y.b||0),n:Math.max(x.n||0,y.n||0),l:((x.t||0)>(y.t||0)?x:y).l,t:Math.max(x.t||0,y.t||0)};});});
     return out;
   }
 
@@ -239,6 +290,9 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     });
   }
 
+  var DOMS={1:{n:'General Security Concepts',w:12},2:{n:'Threats, Vulnerabilities & Mitigations',w:22},3:{n:'Security Architecture',w:18},4:{n:'Security Operations',w:28},5:{n:'Security Program Management',w:20}};
+  var lastRight=false;
+  function inFocus(n){return !p.focus||(byN[n]&&byN[n].d===p.focus);}
   function rollDay(){if(p.day!==today()){p.day=today();p.newToday=0;p.revToday=0;p.extraNew=0;}}
   function limit(){return NEW_PER_DAY+(p.extraNew||0);}
   function unseen(){return p.order.filter(function(n){return !p.cards[n]&&byN[n];});}
@@ -249,14 +303,25 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     var now=Date.now(), last=cur?cur.n:null;
     while(practice.length){var n=practice.shift(); if(byN[n])return {n:n,kind:'Practice'};}
     var keys=seenKeys();
-    var due=keys.filter(function(n){return p.cards[n].d<=now;}).sort(function(a,b){return p.cards[a].d-p.cards[b].d;});
+    var due=keys.filter(function(n){return p.cards[n].d<=now&&inFocus(n);}).sort(function(a,b){return p.cards[a].d-p.cards[b].d;});
     var other=due.filter(function(n){return n!==last;});
     if(other.length)return {n:other[0],kind:p.cards[other[0]].r===0?'Relearning':'Review'};
-    if((p.newToday||0)<limit()){var u=unseen(); if(u.length)return {n:u[0],kind:'New'};}
+    if((p.newToday||0)<limit()){var nn=pickNew(keys); if(nn)return {n:nn,kind:'New'};}
     if(due.length)return {n:due[0],kind:'Relearning'};
-    var soon=keys.filter(function(n){return p.cards[n].r===0&&p.cards[n].d<=now+20*60e3;}).sort(function(a,b){return p.cards[a].d-p.cards[b].d;});
+    var soon=keys.filter(function(n){return inFocus(n)&&p.cards[n].r===0&&p.cards[n].d<=now+20*60e3;}).sort(function(a,b){return p.cards[a].d-p.cards[b].d;});
     if(soon.length)return {n:soon[0],kind:'Relearning'};
     return null;
+  }
+
+  // Next new question: from the focused domain, or else from whichever domain is furthest
+  // behind its share of the exam (Security Operations 28%, Threats 22%, ...).
+  function pickNew(keys){
+    var u=unseen().filter(inFocus); if(!u.length)return null;
+    if(p.focus)return u[0];
+    var seen={1:0,2:0,3:0,4:0,5:0}; keys.forEach(function(n){seen[byN[n].d]++;});
+    var first={}; u.forEach(function(n){var d=byN[n].d; if(!(d in first))first[d]=n;});
+    var best=null,bs=1e9; Object.keys(first).forEach(function(d){var sc=(seen[d]+1)/DOMS[d].w; if(sc<bs){bs=sc;best=first[d];}});
+    return best;
   }
 
   function sched(c,r){
@@ -285,10 +350,110 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     $('barFill').style.width=(qs.length?keys.length/qs.length*100:0).toFixed(1)+'%';
     $('bar').setAttribute('aria-valuemax',qs.length); $('bar').setAttribute('aria-valuenow',keys.length);
     $('barLabel').textContent=keys.length+' of '+qs.length+' seen · '+mast+' mastered (3+ week interval)';
+    renderDomains(keys);
     return {un:un,seen:keys.length};
+  }
+  function renderDomains(keys){
+    var tot={},seen={},att={},ok={};
+    [1,2,3,4,5].forEach(function(d){tot[d]=0;seen[d]=0;att[d]=0;ok[d]=0;});
+    qs.forEach(function(q){if(q.d)tot[q.d]++;});
+    keys.forEach(function(n){var c=p.cards[n],d=byN[n].d; seen[d]++; if(c.f!=null){att[d]++;ok[d]+=c.f;}});
+    var list=$('domList'); list.innerHTML='';
+    function row(d,label,w,sub,acc,cls){
+      var b=el('button','dom'+(((p.focus||0)===d)?' on':''));
+      b.setAttribute('aria-pressed',((p.focus||0)===d)?'true':'false');
+      b.appendChild(el('span','dw',w)); b.appendChild(el('span','dn',label)); b.appendChild(el('span','da'+(cls?' '+cls:''),acc)); b.appendChild(el('span','ds',sub));
+      b.onclick=function(){p.focus=d;queueSave();$('doms').open=false;practice=[];next();};
+      list.appendChild(b);
+    }
+    row(0,'All domains, exam mix','All','New questions come in the same proportions as the real exam','','');
+    [4,2,5,3,1].forEach(function(d){
+      var a=att[d]?Math.round(ok[d]/att[d]*100):null;
+      row(d,'D'+d+' '+DOMS[d].n,DOMS[d].w+'%',seen[d]+' of '+tot[d]+' seen',a==null?'–':a+'% right',a==null?'':a<70?'lo':a>=85?'hi':'');
+    });
+    $('focusLabel').textContent=p.focus?('D'+p.focus+' '+DOMS[p.focus].n):'All domains, exam mix';
+  }
+
+  // ---- PBQs ----
+  var mode='q', pbqs=null, pbqErr=false, pbqCur=null, pbqSel={}, pbqChecked=false;
+  function setTab(m){
+    mode=m; $('qstats').hidden=(m!=='q');
+    $('tabQ').className='tab'+(m==='q'?' on':''); $('tabQ').setAttribute('aria-selected',m==='q');
+    $('tabP').className='tab'+(m==='p'?' on':''); $('tabP').setAttribute('aria-selected',m==='p');
+    render(); window.scrollTo(0,0);
+  }
+  $('tabQ').onclick=function(){setTab('q');};
+  $('tabP').onclick=function(){setTab('p');};
+  function openPbq(x){pbqCur=x;pbqSel={};pbqChecked=false;render();window.scrollTo(0,0);}
+  function renderPbq(){
+    var main=$('main'); main.innerHTML='';
+    if(!pbqs){
+      main.appendChild(el('p','hint',pbqErr?'The PBQs didn\u2019t load. Check that pbq.json is uploaded, then refresh.':'Loading PBQs…'));
+      if(!pbqErr)fetch('pbq.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){pbqs=d;render();},function(){pbqErr=true;render();});
+      return;
+    }
+    var rec=p.pbq||{};
+    if(!pbqCur){
+      var wrap=el('div','plist');
+      wrap.appendChild(el('p','hint','Performance-based practice. Each one has several parts. Answer them all, then check. Your best score is saved.'));
+      pbqs.forEach(function(x){
+        var b=el('button','pcard'), r=rec[x.id], tot=x.i.length;
+        b.appendChild(el('b',null,x.t));
+        var st=el('span','ps'+(r?(r.b===tot?' ok':' mid'):''),r?('Best '+r.b+'/'+tot):'New'); b.appendChild(st);
+        b.appendChild(el('span','pm','D'+x.d+' · '+DOMS[x.d].n+' · '+tot+' parts'));
+        b.onclick=function(){openPbq(x);};
+        wrap.appendChild(b);
+      });
+      main.appendChild(wrap); return;
+    }
+    var x=pbqCur, tot=x.i.length;
+    var back=el('button','link back','\u2190 All PBQs'); back.onclick=function(){pbqCur=null;render();window.scrollTo(0,0);}; main.appendChild(back);
+    var meta=el('div','meta'); meta.appendChild(el('span','chip new','PBQ')); meta.appendChild(el('span','chip dom-chip','D'+x.d+' · '+DOMS[x.d].n)); main.appendChild(meta);
+    main.appendChild(el('h2','verdict',x.t));
+    main.appendChild(el('p','scen',x.s));
+    if(x.x){var box=el('div','ex');box.appendChild(el('pre',null,x.x));main.appendChild(box);}
+    var score=0;
+    if(pbqChecked){x.i.forEach(function(it,k){if(pbqSel[k]===it.a)score++;});
+      main.appendChild(el('p','verdict '+(score===tot?'ok':'bad'),score+' of '+tot+' correct'+(score===tot?'. Nice work!':'')));}
+    var list=el('div','pitems');
+    x.i.forEach(function(it,k){
+      var right=pbqSel[k]===it.a;
+      var box=el('div','pitem'+(pbqChecked?(right?' ok':' bad'):''));
+      var id='pq'+x.id+'_'+k;
+      var lab=el('label',x.m?'mono':null,(k+1)+'. '+it.p); lab.htmlFor=id; box.appendChild(lab);
+      var sel=document.createElement('select'); sel.id=id; sel.disabled=pbqChecked;
+      var o0=document.createElement('option'); o0.value=''; o0.textContent='Choose\u2026'; sel.appendChild(o0);
+      it.o.forEach(function(t,j){var o=document.createElement('option');o.value=j;o.textContent=t;if(pbqSel[k]===j)o.selected=true;sel.appendChild(o);});
+      sel.onchange=function(){pbqSel[k]=sel.value===''?undefined:Number(sel.value);updateCheck();};
+      box.appendChild(sel);
+      if(pbqChecked){
+        box.appendChild(el('span','res',right?'Correct':'Answer: '+it.o[it.a]));
+        box.appendChild(el('p','pw',it.w));
+      }
+      list.appendChild(box);
+    });
+    main.appendChild(list);
+    var dock=el('div','dock'), row=el('div','row');
+    if(!pbqChecked){
+      var c=el('button','btn','Check answers'); c.id='pbqCheck';
+      c.onclick=function(){
+        pbqChecked=true; var sc=0; x.i.forEach(function(it,k){if(pbqSel[k]===it.a)sc++;});
+        p.pbq=p.pbq||{}; var r=p.pbq[x.id]||{b:0,n:0}; p.pbq[x.id]={b:Math.max(r.b||0,sc),n:(r.n||0)+1,l:sc,t:Date.now()};
+        queueSave(); render(); window.scrollTo(0,0);
+      };
+      row.appendChild(c);
+    }else{
+      var t=el('button','btn','Try again'); t.onclick=function(){openPbq(x);};
+      var nx=el('button','btn ghost','All PBQs'); nx.onclick=function(){pbqCur=null;render();window.scrollTo(0,0);};
+      row.appendChild(t); row.appendChild(nx);
+    }
+    dock.appendChild(row); main.appendChild(dock);
+    function updateCheck(){var b=$('pbqCheck'); if(b)b.disabled=x.i.some(function(it,k){return pbqSel[k]===undefined;});}
+    updateCheck();
   }
 
   function render(){
+    if(mode==='p'){renderPbq();return;}
     var info=renderStats();
     var main=$('main'); main.innerHTML='';
     if(!cur){
@@ -306,6 +471,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     var q=byN[cur.n];
     var meta=el('div','meta');
     meta.appendChild(el('span','qnum','Q'+q.n));
+    if(q.d)meta.appendChild(el('span','chip dom-chip','D'+q.d+' · '+DOMS[q.d].n));
     meta.appendChild(el('span','chip'+(cur.kind==='New'?' new':cur.kind==='Relearning'?' relearn':''),cur.kind));
     if(q.a.length>1)meta.appendChild(el('span','chip multi','Choose '+q.a.length));
     main.appendChild(meta);
@@ -341,9 +507,9 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
       var row2=el('div','row');
       var c=el('button','btn','Check answer');
       c.disabled=q.a.length>1?sel.length!==q.a.length:sel.length===0;
-      c.onclick=function(){checked=true;render();};
+      c.onclick=function(){checked=true;lastRight=isRight(q);render();};
       var r=el('button','link','Show me');
-      r.onclick=function(){checked=true;sel=[];render();};
+      r.onclick=function(){checked=true;sel=[];lastRight=false;render();};
       row2.appendChild(c);row2.appendChild(r);dock.appendChild(row2);
     }else{
       dock.appendChild(el('p','hint','How well did you know it? This sets when it comes back.'));
@@ -361,7 +527,10 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
   function rate(r){
     var n=cur.n, wasNew=!p.cards[n];
-    p.cards[n]=sched(p.cards[n],r);
+    var prev=p.cards[n];
+    p.cards[n]=sched(prev,r);
+    p.cards[n].n=((prev&&prev.n)||0)+1; p.cards[n].ok=((prev&&prev.ok)||0)+(lastRight?1:0);
+    if(!prev)p.cards[n].f=lastRight?1:0;
     if(wasNew)p.newToday=(p.newToday||0)+1;
     p.revToday=(p.revToday||0)+1;
     queueSave(); next();
