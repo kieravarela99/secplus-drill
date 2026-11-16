@@ -206,7 +206,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     <details class="doms" id="doms">
       <summary><span>Studying: <b id="focusLabel">All domains, exam mix</b></span><span class="chev" aria-hidden="true">&#9662;</span></summary>
       <div class="domlist" id="domList"></div>
-      <p class="hint small" style="padding:0 14px 12px">Domains are a best guess from each question's wording. "Right" is your first-try accuracy in that domain.</p>
+      <p class="hint small" style="padding:0 14px 12px">Domains are a best guess from each question's wording. "Right" is your accuracy on everything you answered today, reviews included. It starts fresh each day.</p>
     </details>
     </div>
     <main id="main" aria-live="polite"></main>
@@ -259,6 +259,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     out.extraNew=Math.max(ad?a.extraNew||0:0,bd?b.extraNew||0:0);
     out.saved=Math.max(a.saved||0,b.saved||0);
     out.focus=((a.saved||0)>=(b.saved||0)?a.focus:b.focus)||0;
+    var tdy=today(); out.td={day:tdy,a:{}}; [a.td,b.td].forEach(function(t){if(t&&t.day===tdy&&t.a)for(var k in t.a)out.td.a[k]=t.a[k];});
     out.pbq={}; [a.pbq||{},b.pbq||{}].forEach(function(src){Object.keys(src).forEach(function(k){var x=src[k],y=out.pbq[k]; out.pbq[k]=!y?x:{b:Math.max(x.b||0,y.b||0),n:Math.max(x.n||0,y.n||0),l:((x.t||0)>(y.t||0)?x:y).l,t:Math.max(x.t||0,y.t||0)};});});
     return out;
   }
@@ -357,7 +358,9 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     var tot={},seen={},att={},ok={};
     [1,2,3,4,5].forEach(function(d){tot[d]=0;seen[d]=0;att[d]=0;ok[d]=0;});
     qs.forEach(function(q){if(q.d)tot[q.d]++;});
-    keys.forEach(function(n){var c=p.cards[n],d=byN[n].d; seen[d]++; if(c.f!=null){att[d]++;ok[d]+=c.f;}});
+    keys.forEach(function(n){seen[byN[n].d]++;});
+    var allA=0,allOk=0;
+    if(p.td&&p.td.day===today()&&p.td.a)Object.keys(p.td.a).forEach(function(k){var e=p.td.a[k]; if(att[e[0]]==null)return; att[e[0]]++; ok[e[0]]+=e[1]; allA++; allOk+=e[1];});
     var list=$('domList'); list.innerHTML='';
     function row(d,label,w,sub,acc,cls){
       var b=el('button','dom'+(((p.focus||0)===d)?' on':''));
@@ -366,10 +369,11 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
       b.onclick=function(){p.focus=d;queueSave();$('doms').open=false;practice=[];next();};
       list.appendChild(b);
     }
-    row(0,'All domains, exam mix','All','New questions come in the same proportions as the real exam','','');
+    var allP=allA?Math.round(allOk/allA*100):null;
+    row(0,'All domains, exam mix','All','New questions come in the same proportions as the real exam'+(allA?' · '+allA+' answered today':''),allP==null?'–':allP+'% right',allP==null?'':allP<70?'lo':allP>=85?'hi':'');
     [4,2,5,3,1].forEach(function(d){
       var a=att[d]?Math.round(ok[d]/att[d]*100):null;
-      row(d,'D'+d+' '+DOMS[d].n,DOMS[d].w+'%',seen[d]+' of '+tot[d]+' seen',a==null?'–':a+'% right',a==null?'':a<70?'lo':a>=85?'hi':'');
+      row(d,'D'+d+' '+DOMS[d].n,DOMS[d].w+'%',seen[d]+' of '+tot[d]+' seen'+(att[d]?' · '+att[d]+' today':''),a==null?'–':a+'% right',a==null?'':a<70?'lo':a>=85?'hi':'');
     });
     $('focusLabel').textContent=p.focus?('D'+p.focus+' '+DOMS[p.focus].n):'All domains, exam mix';
   }
@@ -531,6 +535,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     p.cards[n]=sched(prev,r);
     p.cards[n].n=((prev&&prev.n)||0)+1; p.cards[n].ok=((prev&&prev.ok)||0)+(lastRight?1:0);
     if(!prev)p.cards[n].f=lastRight?1:0;
+    if(!p.td||p.td.day!==today())p.td={day:today(),a:{}};
+    p.td.a[n+'_'+Date.now()]=[byN[n].d,lastRight?1:0];
     if(wasNew)p.newToday=(p.newToday||0)+1;
     p.revToday=(p.revToday||0)+1;
     queueSave(); next();
