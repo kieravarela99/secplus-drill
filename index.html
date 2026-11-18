@@ -115,6 +115,9 @@ main{background:var(--surface);border:1px solid var(--line);border-radius:16px;p
 .pitem.ok .res{color:var(--ok-ink)} .pitem.bad .res{color:var(--bad-ink)}
 .pitem .pw{margin:0;font-size:14px;line-height:1.55}
 .back{align-self:flex-start;padding-left:0}
+.plh{margin:10px 0 0;font-family:var(--display);font-size:18px;font-weight:700}
+.shot{display:block;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.shot img{display:block;width:100%;height:auto}
 .why{background:var(--sunk);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
 .why .eyebrow{font-size:11px}
 .why p{margin:0;font-size:15px;line-height:1.6}
@@ -206,7 +209,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     <details class="doms" id="doms">
       <summary><span>Studying: <b id="focusLabel">All domains, exam mix</b></span><span class="chev" aria-hidden="true">&#9662;</span></summary>
       <div class="domlist" id="domList"></div>
-      <p class="hint small" style="padding:0 14px 12px">To the left is the how heavily each domain is weighted and to the right is your accuracy on everything you answered today, reviews included. It starts fresh each day.</p>
+      <p class="hint small" style="padding:0 14px 12px">Domains are a best guess from each question's wording. "Right" is your accuracy on everything you answered today, reviews included. It starts fresh each day.</p>
     </details>
     </div>
     <main id="main" aria-live="polite"></main>
@@ -389,6 +392,32 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
   $('tabQ').onclick=function(){setTab('q');};
   $('tabP').onclick=function(){setTab('p');};
   function openPbq(x){pbqCur=x;pbqSel={};pbqChecked=false;render();window.scrollTo(0,0);}
+  function shot(src,alt){
+    var a=el('a','shot'); a.href=src; a.target='_blank'; a.rel='noopener';
+    var im=document.createElement('img'); im.src=src; im.alt=alt; im.loading='lazy'; im.decoding='async';
+    a.appendChild(im); return a;
+  }
+  function renderPdfPbq(main,x){
+    var back=el('button','link back','\u2190 All PBQs'); back.onclick=function(){pbqCur=null;render();window.scrollTo(0,0);}; main.appendChild(back);
+    var meta=el('div','meta'); meta.appendChild(el('span','chip new','PBQ')); meta.appendChild(el('span','chip','From your PDF · Q'+x.n)); meta.appendChild(el('span','chip dom-chip','D'+x.d+' · '+DOMS[x.d].n)); main.appendChild(meta);
+    main.appendChild(el('h2','verdict',x.t));
+    main.appendChild(el('p','hint','Work through it on paper or in your head first. Tap a screenshot to open it full size and zoom in.'));
+    main.appendChild(shot(x.img,'Question '+x.n+' from the PDF'));
+    var dock=el('div','dock'), row=el('div','row');
+    if(!pbqChecked){
+      var s=el('button','btn','Show answer'); s.onclick=function(){pbqChecked=true;render();setTimeout(function(){var a=$('pdfAns');if(a)a.scrollIntoView({behavior:'smooth',block:'start'});},50);};
+      row.appendChild(s);
+    }else{
+      var h=el('h3','plh','Answer'); h.id='pdfAns'; main.appendChild(h);
+      main.appendChild(shot(x.ans,'Answer to question '+x.n+' from the PDF'));
+      dock.appendChild(el('p','hint','How did you do?'));
+      function mark(ok){p.pbq=p.pbq||{}; var r=p.pbq[x.id]||{b:0,n:0}; p.pbq[x.id]={b:Math.max(r.b||0,ok),n:(r.n||0)+1,l:ok,t:Date.now()}; queueSave(); pbqCur=null; render(); window.scrollTo(0,0);}
+      var g=el('button','btn','I got it right'); g.onclick=function(){mark(1);};
+      var m=el('button','btn ghost','I missed some'); m.onclick=function(){mark(0);};
+      row.appendChild(g); row.appendChild(m);
+    }
+    dock.appendChild(row); main.appendChild(dock);
+  }
   function renderPbq(){
     var main=$('main'); main.innerHTML='';
     if(!pbqs){
@@ -399,17 +428,23 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     var rec=p.pbq||{};
     if(!pbqCur){
       var wrap=el('div','plist');
-      wrap.appendChild(el('p','hint','Performance-based practice. Each one has several parts. Answer them all, then check. Your best score is saved.'));
-      pbqs.forEach(function(x){
-        var b=el('button','pcard'), r=rec[x.id], tot=x.i.length;
+      wrap.appendChild(el('p','hint','Performance-based questions: the ones from your PDF first, then practice ones. Your results save to your account.'));
+      function card(x){
+        var b=el('button','pcard'), r=rec[x.id], pdf=x.k==='pdf', tot=pdf?1:x.i.length;
         b.appendChild(el('b',null,x.t));
-        var st=el('span','ps'+(r?(r.b===tot?' ok':' mid'):''),r?('Best '+r.b+'/'+tot):'New'); b.appendChild(st);
-        b.appendChild(el('span','pm','D'+x.d+' · '+DOMS[x.d].n+' · '+tot+' parts'));
+        var txt=!r?'New':pdf?(r.l===1?'Got it':'Missed'):('Best '+r.b+'/'+tot);
+        var cls=!r?'':pdf?(r.l===1?' ok':' mid'):(r.b===tot?' ok':' mid');
+        b.appendChild(el('span','ps'+cls,txt));
+        b.appendChild(el('span','pm',(pdf?'Q'+x.n+' · ':'')+'D'+x.d+' · '+DOMS[x.d].n+(pdf?'':' · '+tot+' parts')));
         b.onclick=function(){openPbq(x);};
         wrap.appendChild(b);
-      });
+      }
+      var fromPdf=pbqs.filter(function(x){return x.k==='pdf';}), mine=pbqs.filter(function(x){return x.k!=='pdf';});
+      if(fromPdf.length){wrap.appendChild(el('h3','plh','From your PDF ('+fromPdf.length+')'));wrap.appendChild(el('p','hint small','Screenshots of the PBQs exactly as they appear in your PDF.'));fromPdf.forEach(card);}
+      if(mine.length){wrap.appendChild(el('h3','plh','Practice PBQs ('+mine.length+')'));wrap.appendChild(el('p','hint small','Interactive practice on common PBQ topics.'));mine.forEach(card);}
       main.appendChild(wrap); return;
     }
+    if(pbqCur.k==='pdf'){renderPdfPbq(main,pbqCur);return;}
     var x=pbqCur, tot=x.i.length;
     var back=el('button','link back','\u2190 All PBQs'); back.onclick=function(){pbqCur=null;render();window.scrollTo(0,0);}; main.appendChild(back);
     var meta=el('div','meta'); meta.appendChild(el('span','chip new','PBQ')); meta.appendChild(el('span','chip dom-chip','D'+x.d+' · '+DOMS[x.d].n)); main.appendChild(meta);
